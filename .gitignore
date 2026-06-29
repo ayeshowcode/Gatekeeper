@@ -1,0 +1,24 @@
+# Internal build files — never commit
+PLAN.md
+JOURNAL.md
+SKILL.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Environment
+.env
+*.env
+
+# ChromaDB local data
+chroma_db/
+.chroma/
+
+# OS
+.DS_Store
+Thumbs.db
