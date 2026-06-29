@@ -1,0 +1,12 @@
+[
+  {"id": "h01", "question": "What is the diameter of Jupiter?", "answer": "139,820 kilometers"},
+  {"id": "h02", "question": "What is the average surface temperature of Mars?", "answer": "-60 degrees Celsius"},
+  {"id": "h03", "question": "How many known moons does Saturn have?", "answer": "146"},
+  {"id": "h04", "question": "What year did Voyager 2 fly past Neptune?", "answer": "1989"},
+  {"id": "h05", "question": "How long does Venus take to orbit the Sun?", "answer": "225 Earth days"},
+  {"id": "h06", "question": "How many known rings does Neptune have?", "answer": "6"},
+  {"id": "h07", "question": "Which planet has the coldest atmosphere in the solar system?", "answer": "Uranus"},
+  {"id": "h08", "question": "How long does a day on Neptune last?", "answer": "16 hours and 6 minutes"},
+  {"id": "h09", "question": "What percentage of Earth's surface is water?", "answer": "71 percent"},
+  {"id": "h10", "question": "When did NASA's Perseverance rover land on Mars?", "answer": "February 18, 2021"}
+]

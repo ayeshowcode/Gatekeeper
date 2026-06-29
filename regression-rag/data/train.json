@@ -1,0 +1,22 @@
+[
+  {"id": "t01", "question": "What is the diameter of Mercury?", "answer": "4,879 kilometers"},
+  {"id": "t02", "question": "What is the surface temperature of Venus?", "answer": "465 degrees Celsius"},
+  {"id": "t03", "question": "How long does Mercury take to orbit the Sun?", "answer": "88 Earth days"},
+  {"id": "t04", "question": "What is the diameter of Earth?", "answer": "12,742 kilometers"},
+  {"id": "t05", "question": "How many moons does Mars have?", "answer": "2"},
+  {"id": "t06", "question": "What is the name of the long-lasting storm on Jupiter?", "answer": "Great Red Spot"},
+  {"id": "t07", "question": "What is the tallest volcano in the solar system?", "answer": "Olympus Mons"},
+  {"id": "t08", "question": "How tall is Olympus Mons?", "answer": "21.9 kilometers"},
+  {"id": "t09", "question": "How many known moons does Jupiter have?", "answer": "95"},
+  {"id": "t10", "question": "What are Jupiter's four largest moons collectively called?", "answer": "Galilean moons"},
+  {"id": "t11", "question": "Who discovered the Galilean moons?", "answer": "Galileo Galilei"},
+  {"id": "t12", "question": "How long does Jupiter take to rotate on its axis?", "answer": "9 hours and 55 minutes"},
+  {"id": "t13", "question": "What is the name of Saturn's largest moon?", "answer": "Titan"},
+  {"id": "t14", "question": "From what year to what year did the Cassini spacecraft orbit Saturn?", "answer": "2004 to 2017"},
+  {"id": "t15", "question": "What is the axial tilt of Uranus?", "answer": "97.77 degrees"},
+  {"id": "t16", "question": "How many known moons does Uranus have?", "answer": "27"},
+  {"id": "t17", "question": "What year did Voyager 2 fly past Uranus?", "answer": "1986"},
+  {"id": "t18", "question": "What is the diameter of Neptune?", "answer": "49,244 kilometers"},
+  {"id": "t19", "question": "How long does Neptune take to orbit the Sun?", "answer": "165 Earth years"},
+  {"id": "t20", "question": "What are the fastest wind speeds recorded in the solar system?", "answer": "2,100 kilometers per hour"}
+]
