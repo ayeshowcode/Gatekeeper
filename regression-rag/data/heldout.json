@@ -8,5 +8,7 @@
   {"id": "h07", "question": "Which planet has the coldest atmosphere in the solar system?", "answer": "Uranus"},
   {"id": "h08", "question": "How long does a day on Neptune last?", "answer": "16 hours and 6 minutes"},
   {"id": "h09", "question": "What percentage of Earth's surface is water?", "answer": "71 percent"},
-  {"id": "h10", "question": "When did NASA's Perseverance rover land on Mars?", "answer": "February 18, 2021"}
+  {"id": "h10", "question": "When did NASA's Perseverance rover land on Mars?", "answer": "February 18, 2021"},
+  {"id": "h11", "question": "What is the diameter of the fastest-rotating planet in the solar system?", "answer": "139,820 kilometers"},
+  {"id": "h12", "question": "What is the orbital period of the planet most recognized for its ring system?", "answer": "29.5 Earth years"}
 ]
