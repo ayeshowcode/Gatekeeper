@@ -15,9 +15,13 @@ env/
 .env
 *.env
 
+# Virtual environment
+regression-rag/.venv/
+
 # ChromaDB local data
 chroma_db/
 .chroma/
+regression-rag/data/chroma/
 
 # OS
 .DS_Store
