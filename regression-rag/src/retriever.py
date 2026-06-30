@@ -6,8 +6,10 @@ returns the k most semantically similar chunks for a given question.
 
 import os
 import chromadb
+from dotenv import load_dotenv
 from openai import OpenAI
 
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 client = OpenAI()
 COLLECTION_NAME = "gatekeeper"
 CHUNK_SIZE = 500
