@@ -1,7 +1,10 @@
+<div align="center">
+
 # Gatekeeper
 
-> A self-improving RAG agent with a regression-proof learning gate.
-> Improvement gets in. Regression doesn't.
+**A self-improving RAG agent with a regression-proof learning gate.**
+
+Improvement gets in. Regression doesn't.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![ChromaDB](https://img.shields.io/badge/Vector_Store-ChromaDB-orange)
@@ -9,56 +12,119 @@
 ![MCP](https://img.shields.io/badge/Protocol-MCP-green)
 ![Status](https://img.shields.io/badge/Status-In_Progress-yellow)
 
----
-
-## Knowledge base
-
-The agent answers questions about the **solar system's 8 planets**, grounded entirely in 4 source documents:
-
-| File | Covers |
-|------|--------|
-| `mercury_venus.txt` | Diameter, orbital period, temperature, moons, spacecraft visits |
-| `earth_mars.txt` | Diameter, rotation, moons, surface features, rover missions |
-| `jupiter_saturn.txt` | Size, moons (Galilean + Titan), rings, storm systems, missions |
-| `uranus_neptune.txt` | Axial tilt, moons, ring count, temperature, Voyager 2 flyby |
-
-Two planets per document — this is deliberate. It forces the retriever to surface the right document *and* the model to pick out the correct planet's data from it, creating a realistic retrieval challenge.
+</div>
 
 ---
 
-## Evaluation dataset
+## Overview
 
-30 question→answer pairs split across two files:
+Gatekeeper is a retrieval-augmented Q&A agent built on a knowledge base of solar system facts. It retrieves relevant context before answering, and every answer is scored by a deterministic evaluation harness using normalized exact-match — not a human, not an LLM judge.
 
-| File | Questions | Purpose |
-|------|-----------|---------|
-| `data/train.json` | 20 | The agent learns on these — failures trigger reflection |
-| `data/heldout.json` | 10 | Sealed — never learned on, only used by the gate and harness |
+The current milestone establishes the foundation: a trustworthy retrieval pipeline and a reproducible pass/fail signal. This is the layer everything else gets built on.
 
-All answers are short exact strings (a name, number, or single phrase) verifiable directly from the source documents — no outside knowledge required.
+## Architecture
 
-**Overlapping skills across both sets** — both files contain questions about moon counts, temperatures, spacecraft years, orbital periods, and diameters. A lesson learned on a train failure can plausibly affect a held-out answer, which is the condition that makes regression catchable.
+```mermaid
+flowchart LR
+    A[Knowledge Base\n4 docs] -->|chunk + embed| B[(ChromaDB\nVector Store)]
+    Q[Question] -->|embed| B
+    B -->|top-3 chunks| C[Agent\nGPT-4o-mini, temp=0]
+    C -->|answer| D[Harness\nnormalized exact-match]
+    D -->|PASS/FAIL| E[Score]
+```
 
----
+## Features
+
+- **Semantic retrieval** — documents chunked and embedded with `text-embedding-3-small`, queried via ChromaDB top-k similarity search
+- **Context-grounded answering** — the agent is instructed to answer only from retrieved context, at temperature 0 for deterministic output
+- **Deterministic evaluation** — normalized exact-match scoring (case, whitespace, and trailing punctuation insensitive)
+- **Train / held-out separation** — physically separate datasets to keep evaluation honest
+- **Reflection primitive** — a `reflect()` function that drafts a general lesson from any failure, ready to be wired into a learning loop
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| LLM | OpenAI `gpt-4o-mini` |
+| Embeddings | OpenAI `text-embedding-3-small` |
+| Vector store | ChromaDB (persistent, local) |
+| Language | Python 3.13 |
+
+## Installation
+
+```bash
+git clone https://github.com/ayeshowcode/Gatekeeper.git
+cd Gatekeeper/regression-rag
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+pip install -r requirements.txt
+```
+
+Set your OpenAI API key:
+
+```bash
+export OPENAI_API_KEY=sk-...    # macOS/Linux
+$env:OPENAI_API_KEY="sk-..."    # Windows PowerShell
+```
+
+## Usage
+
+```bash
+# Build the vector index (one-time)
+python src/retriever.py
+
+# Evaluate on the training set
+python src/harness.py --dataset data/train.json
+
+# Evaluate on the held-out set
+python src/harness.py --dataset data/heldout.json
+```
+
+Sample output:
+
+```
+  [PASS] t01: What is the diameter of Mercury?
+  [FAIL] t05: How many moons does Mars have?
+         expected: '2'
+         got:      'two'
+  ...
+
+train: 17/20
+```
+
+## Results
+
+| Dataset | Score | Accuracy |
+|---|---|---|
+| `train.json` | 17 / 20 | 85% |
+| `heldout.json` | 9 / 10 | 90% |
+
+All current failures are answer-format mismatches (e.g. `"two"` vs `"2"`, missing units) rather than factual errors — the retrieval and reasoning pipeline is sound.
 
 ## Project structure
 
 ```
 regression-rag/
 ├── data/
-│   └── docs/           ← 4 knowledge base documents (planets)
+│   ├── docs/              # knowledge base (4 documents, 2 planets each)
+│   ├── train.json         # 20 train Q→A pairs
+│   ├── heldout.json       # 10 sealed Q→A pairs
+│   └── chroma/            # persisted vector index (generated)
 ├── src/
-│   ├── retriever.py    ← chunk, embed, retrieve top-k
-│   ├── agent.py        ← answer() + reflect()
-│   └── harness.py      ← exact-match eval on any dataset
+│   ├── retriever.py       # chunking, embedding, top-k retrieval
+│   ├── agent.py           # answer() and reflect()
+│   └── harness.py         # normalized exact-match evaluation
 └── requirements.txt
 ```
 
----
+## Design notes
 
-## Setup
+- **Planetary facts as the domain** — specific enough (exact moon counts, temperatures, dates) that the model can't shortcut from memory; it must rely on retrieval.
+- **Two planets per document** — keeps retrieval non-trivial; a single-planet-per-file layout would make lookup too easy to ever fail.
+- **Train/held-out as separate files** — prevents accidental leakage between data used for learning and data used for evaluation.
+- **Shared skills across train/held-out** — both sets test the same categories (moon counts, temperatures, spacecraft dates, orbital periods, diameters) on different planets.
+- **Loose normalization** — only formatting noise is removed; semantic near-misses are left as real failures.
 
-```bash
-pip install -r regression-rag/requirements.txt
-export OPENAI_API_KEY=sk-...
-```
+## License
+
+MIT
