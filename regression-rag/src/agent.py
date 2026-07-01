@@ -50,26 +50,33 @@ Answer:"""
 
 def reflect(question: str, wrong_answer: str, context: str, correct_answer: str) -> str:
     """
-    Given a failed question, draft one short general lesson that would help next time.
-    The lesson must be general — transferable to other questions, not a memorized answer.
+    Given a failed question, produce a specific, actionable lesson naming the exact
+    error pattern and the concrete corrective rule. Generic advice is forbidden.
     """
-    prompt = f"""A question-answering agent got a question wrong. Your job is to write ONE short, general lesson that would help it answer similar questions correctly in the future.
+    prompt = f"""A RAG-based question-answering agent gave a wrong answer. Diagnose the specific error and write one precise, actionable lesson to prevent this class of mistake.
 
-The lesson must be GENERAL — it should apply to a class of questions, not just memorize this one answer. Do NOT write "the answer to this question is X." Write a strategy.
+The lesson MUST:
+- Name the concrete failure pattern (e.g. "when the context contains two similar values for two different entities and the question identifies the entity indirectly...")
+- State a specific corrective rule (e.g. "...first resolve which entity the question refers to, then extract only that entity's value, not a neighbouring entity's value from the same chunk")
+- Be 2-3 sentences maximum
+
+The lesson MUST NOT:
+- Use vague advice like "verify the context", "cross-reference sources", or "double-check the answer"
+- Mention the specific answer values from this question (the lesson must apply to a class of similar questions, not memorise this one case)
 
 Failed question: {question}
 Agent's wrong answer: {wrong_answer}
 Correct answer: {correct_answer}
-Retrieved context that was available:
+Context the agent retrieved:
 {context}
 
-Write one lesson (1-2 sentences, starting with "When"):"""
+Write the lesson (start with "When"):"""
 
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
-        max_tokens=80,
+        max_tokens=120,
     )
     return response.choices[0].message.content.strip()
 
