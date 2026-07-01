@@ -12,7 +12,7 @@ import json
 sys.path.insert(0, os.path.dirname(__file__))
 from agent import answer, reflect
 from retriever import retrieve
-from harness import normalize
+from harness import matches
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 TRAIN_PATH = os.path.join(DATA_DIR, "train.json")
@@ -30,7 +30,7 @@ def run_loop() -> list[dict]:
         correct = item["answer"]
 
         got = answer(question)
-        if normalize(got) == normalize(correct):
+        if matches(correct, got):
             print(f"  [PASS] {qid}")
             continue
 
