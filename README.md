@@ -163,6 +163,39 @@ No new insights to promote (already in the store, or nothing ACCEPTED).
 
 All three questions failed identically to their very first run — even though the lessons written specifically to fix them were already loaded into the prompt via the insight store. The gate only verifies that a lesson is *safe* (it doesn't break anything else); it says nothing about whether the lesson is *effective* (whether it actually changes the agent's behavior on the question it was written for). This agent, grounded in retrieved context at temperature 0, tends to read past reasoning-level advice about "which entity does this question refer to" — whether that advice is brand new or something it already has stored. Storing and retrieving a lesson is not the same as acting on it.
 
+## The hero graph
+
+`src/plot.py` reads every `iteration_snapshot` record `src/loop.py` appends to `data/log.jsonl` and plots train accuracy against held-out accuracy across iterations.
+
+![Hero graph: train vs held-out accuracy across loop.py iterations](regression-rag/docs/hero_graph.png)
+
+Both lines are flat by iteration 1: train stays at 17/20 and held-out stays at 13/13, even though 3 lessons were gate-ACCEPTED and promoted into the insight store in between. This is not a broken graph — it is the same finding from the section above, made visible: the gate proved these lessons were *safe* (held-out never dipped), but storing and injecting a lesson did not make it *effective* (train never rose). A graph that only ever shows train climbing while held-out holds steady would have been a more conventional-looking result, but it would have been describing a different agent than the one this project actually built and measured.
+
+Iteration 0 reuses the frozen `train_baseline.json` / `baseline.json` pass-counts captured on Day 2, before any lesson existed. Iteration 1 is a real, freshly-run `evaluate()` call over both datasets with the current insight store loaded — not a re-assertion of the Day 2 numbers.
+
+## The ablation — proving the gate by turning it off
+
+The hero graph shows the gate protecting held-out from 3 lessons that all happened to be safe. That alone doesn't prove the gate *can* stop anything — it only proves these 3 lessons were harmless. `src/ablation.py` closes that gap directly: it takes the same 4 candidate lessons (the 3 real ACCEPTed ones, plus the deliberately adversarial format-level lesson from `verify_gate.py` that reproducibly breaks held-out) and installs them one at a time down two parallel pipelines — **gate ON**, exactly what this project does, and **gate OFF**, a counterfactual where every candidate is installed unconditionally with no regression check at all. Every point on both lines is a real `evaluate()` call against held-out; nothing is simulated.
+
+<table>
+<tr>
+<td><img src="regression-rag/docs/hero_graph.png" alt="Hero graph" width="420"></td>
+<td><img src="regression-rag/docs/ablation_graph.png" alt="Ablation graph" width="420"></td>
+</tr>
+</table>
+
+```
+  step 0 [baseline]: ON=13/13  OFF=13/13
+  step 1 [t01]: gate=ACCEPT  ON=13/13  OFF=13/13
+  step 2 [t08]: gate=ACCEPT  ON=13/13  OFF=13/13
+  step 3 [t09]: gate=ACCEPT  ON=13/13  OFF=13/13
+  step 4 [adversarial (format-level)]: gate=REJECT  ON=13/13  OFF=12/13
+```
+
+The two lines are identical for the first 3 lessons — both pipelines install them, since the gate correctly agrees they're safe. They diverge only at the 4th: the gate REJECTs the adversarial lesson, so gate-ON never installs it and stays at 13/13; gate-OFF installs it unconditionally and immediately drops to 12/13 (`h13` regresses). Same candidate lesson, same held-out set, same everything — the only variable that changed between the two lines is whether the gate was consulted. That single divergence point is the entire value proposition of this project made visible in one picture.
+
+The 12/13 drop isn't a one-run fluke: this is the exact same lesson `verify_gate.py` already stress-tested across 4 independent runs, where it broke `h01` and `h13` reproducibly every single time (see "Proving the gate actually rejects" above). This ablation run only breaks `h13` — one fewer than the 4-run stress test's worst case, not more — so if anything this graph understates the lesson's blast radius rather than overstating it.
+
 ## Features
 
 - **Semantic retrieval** — documents chunked and embedded with `text-embedding-3-small`, queried via ChromaDB top-k similarity search
@@ -221,6 +254,12 @@ python src/verify_gate.py
 
 # (Re-)promote any ACCEPTed candidates into data/insights.json directly
 python src/insights.py
+
+# Plot the hero graph (train vs held-out accuracy across loop.py iterations)
+python src/plot.py
+
+# Ablation: gate ON vs gate OFF on the same candidate lessons -> data/log_nogate.jsonl
+python src/ablation.py
 ```
 
 ## Results
@@ -237,6 +276,11 @@ The 3 training failures (`t01`, `t08`, `t09`) all share the same underlying skil
 | Real training failures (`loop.py`) | 3 | 3 ACCEPT, 0 REJECT |
 | Adversarial stress test (`verify_gate.py`) | 1, run 4 times | REJECT, reproducible 4/4 |
 
+| Ablation (`ablation.py`) | Held-out after adversarial lesson |
+|---|---|
+| Gate ON | 13/13 (100%) — lesson REJECTed, never installed |
+| Gate OFF | 12/13 (92%) — lesson installed unconditionally, `h13` regresses |
+
 ## Project structure
 
 ```
@@ -249,10 +293,13 @@ regression-rag/
 │   ├── candidates.json    # candidate lessons from the latest loop.py run, with gate verdicts
 │   ├── insights.json      # durable, deduplicated store of every gate-ACCEPTED lesson
 │   ├── log.jsonl          # append-only audit trail: every gate verdict + every promotion
+│   ├── log_nogate.jsonl   # ablation.py's gate-ON-vs-gate-OFF step results
 │   └── chroma/             # persisted vector index (generated)
 ├── docs/
 │   ├── loop.png            # reflection loop generating candidate lessons
 │   ├── gate.png             # gate.py ACCEPT run
+│   ├── hero_graph.png       # train vs held-out accuracy across loop.py iterations
+│   ├── ablation_graph.png   # held-out accuracy, gate ON vs gate OFF
 │   ├── train-baseline_before_norm.png
 │   └── train-baseline-after.png
 ├── src/
@@ -260,10 +307,12 @@ regression-rag/
 │   ├── agent.py             # answer() (auto-loads the insight store) and reflect()
 │   ├── harness.py            # normalized exact-match evaluation
 │   ├── gate.py               # the metacognitive evaluation gate
-│   ├── loop.py                # reflection loop: fail -> draft -> gate -> promote
+│   ├── loop.py                # reflection loop: fail -> draft -> gate -> promote -> log a snapshot
 │   ├── verify_gate.py         # adversarial stress test proving the gate can reject
+│   ├── ablation.py             # gate ON vs gate OFF on the same candidate lessons
 │   ├── insights.py            # the insight store: promote() and load_insights()
-│   └── logger.py               # append-only event logging to data/log.jsonl
+│   ├── logger.py               # append-only event logging to a jsonl file
+│   └── plot.py                  # reads log.jsonl / log_nogate.jsonl, draws both graphs
 └── requirements.txt
 ```
 
