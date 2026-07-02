@@ -1,0 +1,5 @@
+{"timestamp": "2026-07-02T22:23:38.854654+00:00", "event": "ablation_step", "step": 0, "label": "baseline (no lessons)", "gate_verdict": null, "gate_on_score": 13, "gate_on_total": 13, "gate_off_score": 13, "gate_off_total": 13}
+{"timestamp": "2026-07-02T22:24:16.823541+00:00", "event": "ablation_step", "step": 1, "label": "+t01", "gate_verdict": "ACCEPT", "gate_on_score": 13, "gate_on_total": 13, "gate_off_score": 13, "gate_off_total": 13}
+{"timestamp": "2026-07-02T22:24:54.718397+00:00", "event": "ablation_step", "step": 2, "label": "+t08", "gate_verdict": "ACCEPT", "gate_on_score": 13, "gate_on_total": 13, "gate_off_score": 13, "gate_off_total": 13}
+{"timestamp": "2026-07-02T22:25:38.114478+00:00", "event": "ablation_step", "step": 3, "label": "+t09", "gate_verdict": "ACCEPT", "gate_on_score": 13, "gate_on_total": 13, "gate_off_score": 13, "gate_off_total": 13}
+{"timestamp": "2026-07-02T22:26:04.718699+00:00", "event": "ablation_step", "step": 4, "label": "+adversarial (format-level)", "gate_verdict": "REJECT", "gate_on_score": 13, "gate_on_total": 13, "gate_off_score": 12, "gate_off_total": 13}
