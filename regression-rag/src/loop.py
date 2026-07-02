@@ -3,7 +3,9 @@ Reflexion loop: runs the agent on the train set, calls reflect() for every
 failure to generate a candidate lesson, then immediately gates that lesson
 through gate(). ACCEPTED lessons are kept as safe; REJECTED lessons are kept
 too (for the record) but flagged with the held-out ids they would have broken.
-Nothing gets promoted to the insight store (Day 4) without passing the gate.
+At the end of the run, promote() merges every ACCEPTED lesson from this run
+into the insight store -- nothing reaches data/insights.json without having
+passed the gate first.
 """
 
 import sys
@@ -15,6 +17,7 @@ from agent import answer, reflect
 from retriever import retrieve
 from harness import matches
 from gate import gate
+from insights import promote
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 TRAIN_PATH = os.path.join(DATA_DIR, "train.json")
@@ -72,7 +75,14 @@ def run_loop() -> dict:
 
     print(f"\n{len(candidates)} candidate lesson(s) saved -> {CANDIDATES_PATH}")
     print(f"{len(accepted)} ACCEPTED, {len(rejected)} REJECTED.")
-    return {"accepted": accepted, "rejected": rejected}
+
+    promoted = promote()
+    if promoted:
+        print(f"{len(promoted)} new insight(s) promoted -> {os.path.join(DATA_DIR, 'insights.json')}")
+    else:
+        print("No new insights to promote (already in the store, or nothing ACCEPTED).")
+
+    return {"accepted": accepted, "rejected": rejected, "promoted": promoted}
 
 
 if __name__ == "__main__":

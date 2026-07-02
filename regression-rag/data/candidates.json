@@ -10,9 +10,9 @@
   {
     "source_id": "t08",
     "question": "What is the diameter of the planet that has a longer day than its year?",
-    "wrong_answer": "Neptune: 49,244 kilometers",
+    "wrong_answer": "Earth",
     "correct_answer": "12,104 kilometers",
-    "lesson": "When the context contains multiple planets with distinct attributes, and the question refers to a planet indirectly by comparing its day and year lengths, first identify the specific planet being referenced before extracting its associated values. This ensures that the agent retrieves the correct diameter for the intended planet rather than mistakenly selecting a value from a different entity in the context.",
+    "lesson": "When the context contains multiple planets with distinct characteristics, and the question refers to a planet indirectly by comparing its day and year lengths, first identify the specific planet being referenced before extracting any associated values. This ensures that the agent retrieves the correct diameter for the intended planet rather than mistakenly selecting data from a nearby entity.",
     "gate_verdict": "ACCEPT"
   },
   {
