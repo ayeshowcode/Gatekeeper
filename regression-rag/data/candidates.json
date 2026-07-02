@@ -4,20 +4,23 @@
     "question": "What is the average temperature of the planet that Voyager 2 visited before Neptune?",
     "wrong_answer": "-214 degrees Celsius",
     "correct_answer": "-224 degrees Celsius",
-    "lesson": "When the context contains information about multiple entities, such as different planets, and the question refers to one of them indirectly, ensure to first identify the specific entity the question pertains to before extracting any values. Then, extract only the relevant value associated with that identified entity, avoiding confusion with values related to neighboring entities."
+    "lesson": "When the context contains information about multiple celestial bodies, ensure that the entity referenced in the question is clearly identified before extracting any values. Specifically, first determine which planet the question pertains to, then extract the relevant data for that specific entity, avoiding values associated with nearby or similar entities.",
+    "gate_verdict": "ACCEPT"
   },
   {
     "source_id": "t08",
     "question": "What is the diameter of the planet that has a longer day than its year?",
     "wrong_answer": "Neptune: 49,244 kilometers",
     "correct_answer": "12,104 kilometers",
-    "lesson": "When the context contains multiple planets with distinct attributes, and the question refers to a planet indirectly by comparing its day and year lengths, first identify the specific planet being referenced before extracting its associated values. This ensures that the agent retrieves the correct diameter for the intended planet rather than mistakenly selecting a value from a different entity in the context."
+    "lesson": "When the context contains multiple planets with distinct attributes, and the question refers to a planet indirectly by comparing its day and year lengths, first identify the specific planet being referenced before extracting its associated values. This ensures that the agent retrieves the correct diameter for the intended planet rather than mistakenly selecting a value from a different entity in the context.",
+    "gate_verdict": "ACCEPT"
   },
   {
     "source_id": "t09",
     "question": "What is the diameter of the planet that Voyager 2 visited before Neptune?",
     "wrong_answer": "Uranus",
     "correct_answer": "50,724 kilometers",
-    "lesson": "When the context contains information about multiple entities that are closely related, and the question refers to one of those entities indirectly, first clarify which entity the question is addressing before extracting any values. This ensures that the agent retrieves the correct information associated with the intended entity, rather than mistakenly selecting data from a similar but incorrect entity."
+    "lesson": "When the context contains information about multiple entities that are closely related, and the question refers to one of those entities indirectly, ensure to first clarify which entity the question is addressing. Then, extract the relevant information specifically for that entity, avoiding any confusion with details from neighboring entities.",
+    "gate_verdict": "ACCEPT"
   }
 ]
