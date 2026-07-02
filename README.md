@@ -31,11 +31,14 @@ flowchart LR
     A[Knowledge Base\n4 docs] -->|chunk + embed| B[(ChromaDB\nVector Store)]
     Q[Question] -->|embed| B
     B -->|top-3 chunks| C[Agent\nGPT-4o-mini, temp=0]
+    S[(Insight Store\ninsights.json)] -.->|auto-loaded lessons| C
     C -->|answer| D[Harness\nnormalized exact-match]
     D -->|FAIL| R[Reflect\ndraft a candidate lesson]
     R --> G{Gate\nre-run held-out with lesson}
     G -->|no regression| ACC[ACCEPT\ncandidate kept]
+    ACC -->|promote| S
     G -->|regression| REJ[REJECT\ncandidate discarded, broken ids logged]
+    G -.->|every verdict| L[(log.jsonl\naudit trail)]
 ```
 
 ## How the gate works
@@ -123,6 +126,43 @@ The result is reproducible across 4 independent runs, with no flaky ids. It also
 
 ![Reflexion loop generating candidate lessons](regression-rag/docs/loop.png)
 
+## How the insight store works
+
+Passing the gate isn't the end of a lesson's journey — it still has to reach a place the agent actually reads from. Three pieces close that loop:
+
+1. **`src/insights.py`** owns `data/insights.json`, the durable, deduplicated set of every lesson that has ever passed the gate. Its `promote()` function reads `data/candidates.json`, keeps only the entries with `gate_verdict == "ACCEPT"`, and merges them in by `source_id` — so re-running the loop can never create duplicate entries.
+2. **`src/agent.py`'s `answer()`** loads that store automatically whenever a caller doesn't hand it a specific lesson (`lessons=None`). Callers that need to test one lesson in isolation — the gate, and the harness's baseline runs — always pass an explicit `lessons` string, which skips auto-loading entirely. This is what keeps the gate's verdicts honest: a candidate lesson is judged strictly on its own effect, never silently blended with whatever else is already in the store.
+3. **`src/loop.py`** calls `promote()` automatically at the end of every run, so a single `python src/loop.py` performs the entire cycle end to end: fail → draft a lesson → gate it → promote it if safe.
+
+Every gate verdict and every promotion is also appended, with a timestamp, to `data/log.jsonl` by `src/logger.py` — an append-only audit trail that, unlike `insights.json`, never gets deduplicated or rewritten, so the full history of decisions survives even after the current-state files move on.
+
+## A lesson can be stored and still not fix anything
+
+Re-running `src/loop.py` after `t01`, `t08`, and `t09`'s lessons were already promoted into the insight store produced this:
+
+```
+[FAIL] t01: What is the average temperature of the planet that Voyager 2 visited before Neptune?
+       expected: '-224 degrees Celsius'
+       got:      '-214 degrees Celsius'
+       gate:     ACCEPT
+
+[FAIL] t08: What is the diameter of the planet that has a longer day than its year?
+       expected: '12,104 kilometers'
+       got:      'Earth'
+       gate:     ACCEPT
+
+[FAIL] t09: What is the diameter of the planet that Voyager 2 visited before Neptune?
+       expected: '50,724 kilometers'
+       got:      'Uranus'
+       gate:     ACCEPT
+
+3 candidate lesson(s) saved -> data/candidates.json
+3 ACCEPTED, 0 REJECTED.
+No new insights to promote (already in the store, or nothing ACCEPTED).
+```
+
+All three questions failed identically to their very first run — even though the lessons written specifically to fix them were already loaded into the prompt via the insight store. The gate only verifies that a lesson is *safe* (it doesn't break anything else); it says nothing about whether the lesson is *effective* (whether it actually changes the agent's behavior on the question it was written for). This agent, grounded in retrieved context at temperature 0, tends to read past reasoning-level advice about "which entity does this question refer to" — whether that advice is brand new or something it already has stored. Storing and retrieving a lesson is not the same as acting on it.
+
 ## Features
 
 - **Semantic retrieval** — documents chunked and embedded with `text-embedding-3-small`, queried via ChromaDB top-k similarity search
@@ -132,6 +172,8 @@ The result is reproducible across 4 independent runs, with no flaky ids. It also
 - **Reflexion primitive** — a `reflect()` function that drafts a general, transferable lesson from any failure, never a memorized answer
 - **Metacognitive evaluation gate** — `gate()` re-runs the full held-out set with each candidate lesson applied and rejects any lesson that regresses a previously-passing question, returning the specific broken ids as evidence
 - **Adversarial verification** — `verify_gate.py` proves the gate can reject a plausible, non-strawman lesson, with reproducibility checked across multiple runs before any regression is reported as solid
+- **Insight store** — `insights.py`'s `promote()` merges every gate-ACCEPTED lesson into `data/insights.json`, deduplicated by source question, and `agent.answer()` loads it automatically on every real call
+- **Append-only audit trail** — `data/log.jsonl` records every gate verdict and every promotion with a timestamp via `src/logger.py`, independent of the current-state files that get overwritten or deduplicated
 
 ## Tech stack
 
@@ -171,11 +213,14 @@ python src/harness.py --dataset data/train.json
 # Evaluate on the held-out set
 python src/harness.py --dataset data/heldout.json
 
-# Real train-failure lessons -> the gate ACCEPTs (safe self-improvement)
+# Real train-failure lessons -> gated, and ACCEPTed ones promoted to the insight store
 python src/loop.py
 
 # A deliberately adversarial but plausible lesson -> the gate REJECTs
 python src/verify_gate.py
+
+# (Re-)promote any ACCEPTed candidates into data/insights.json directly
+python src/insights.py
 ```
 
 ## Results
@@ -201,7 +246,9 @@ regression-rag/
 │   ├── train.json         # 20 train Q→A pairs
 │   ├── heldout.json        # 13 sealed Q→A pairs
 │   ├── baseline.json      # frozen held-out pass-set, captured before any lesson existed
-│   ├── candidates.json    # candidate lessons from train failures, with gate verdicts
+│   ├── candidates.json    # candidate lessons from the latest loop.py run, with gate verdicts
+│   ├── insights.json      # durable, deduplicated store of every gate-ACCEPTED lesson
+│   ├── log.jsonl          # append-only audit trail: every gate verdict + every promotion
 │   └── chroma/             # persisted vector index (generated)
 ├── docs/
 │   ├── loop.png            # reflection loop generating candidate lessons
@@ -210,11 +257,13 @@ regression-rag/
 │   └── train-baseline-after.png
 ├── src/
 │   ├── retriever.py        # chunking, embedding, top-k retrieval
-│   ├── agent.py             # answer() and reflect()
+│   ├── agent.py             # answer() (auto-loads the insight store) and reflect()
 │   ├── harness.py            # normalized exact-match evaluation
 │   ├── gate.py               # the metacognitive evaluation gate
-│   ├── loop.py                # reflection loop, gated
-│   └── verify_gate.py         # adversarial stress test proving the gate can reject
+│   ├── loop.py                # reflection loop: fail -> draft -> gate -> promote
+│   ├── verify_gate.py         # adversarial stress test proving the gate can reject
+│   ├── insights.py            # the insight store: promote() and load_insights()
+│   └── logger.py               # append-only event logging to data/log.jsonl
 └── requirements.txt
 ```
 
@@ -226,6 +275,8 @@ regression-rag/
 - **Shared skills across train/held-out** — both sets test the same categories (moon counts, temperatures, spacecraft dates, orbital periods, diameters) on different planets, which is what makes a lesson learned on train capable of affecting held-out at all.
 - **Loose normalization, shared everywhere** — formatting noise (case, articles, number words, trailing units) is stripped by a single `matches()` function imported by the harness, the loop, and the gate, so no component can disagree with another over surface form.
 - **A single lesson can regress questions it never mentions** — demonstrated directly by the adversarial test, where a lesson scoped to temperature values also altered a diameter answer. The gate re-evaluates the full held-out set on every candidate specifically because a lesson's actual blast radius cannot be inferred from its wording alone.
+- **`None` vs `""` as the lessons argument mean different things** — `agent.answer()` treats "no argument given" (`None`) as "load everything in the insight store," but an explicit empty string as "use no lessons at all." This is what lets the gate and the harness's baseline runs test a single lesson (or nothing) in total isolation, while every other caller gets the full benefit of what's already been learned.
+- **Safe is not the same as effective** — the gate proves a lesson doesn't break anything; it says nothing about whether the lesson actually fixes the failure it was written for. `t01`, `t08`, and `t09` all demonstrate this directly: their own targeted lessons, already stored and injected, did not change their answers at all.
 
 ## License
 
