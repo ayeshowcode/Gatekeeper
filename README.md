@@ -203,8 +203,29 @@ The 12/13 drop isn't a one-run fluke: this is the exact same lesson `verify_gate
 | Tool | What it does | Who calls it |
 |---|---|---|
 | `ask(question)` | Answers a question with the RAG agent, auto-loading every lesson currently in the insight store | An end user or host application asking the product a question |
-| `improve()` | Runs one full Reflexion + gate pass over `train.json`; returns accepted lessons, rejected lessons (with the held-out ids each would have broken), and how many new insights were promoted | Whoever owns the agent, to trigger a learning cycle and see the gate's verdicts directly |
+| `improve(test_lesson=None)` | With no argument, runs one full Reflexion + gate pass over `train.json` and returns accepted/rejected lessons plus how many new insights were promoted. Given `test_lesson`, skips the train loop and gates that one candidate lesson directly against the sealed held-out set — this is how a REJECT is demonstrated on demand | Whoever owns the agent, to trigger a learning cycle or test a specific lesson and see the gate's verdict directly |
 | `report()` | Returns current train/held-out accuracy and how many lessons are stored, using the live insight store | A trust dashboard — proof the system hasn't regressed, on demand |
+
+**Why `improve()` needs the `test_lesson` escape hatch.** Every real lesson `reflect()` has drafted from an actual training failure in this project has been gate-ACCEPTed — the agent is grounded enough in retrieved context that reasoning-level bad advice doesn't stick (see "Proving the gate actually rejects" below). Calling plain `improve()` therefore cannot show a REJECT; that's a real, previously-documented property of this system, not a bug in the tool. `test_lesson` lets the same adversarial-but-plausible lesson already proven in `verify_gate.py` be gated through the live MCP protocol, producing a genuine, reproducible REJECT rather than a fabricated one.
+
+**The money-shot, captured through the real MCP protocol** (`docs/mcp_demo.txt`):
+
+```
+=== improve(test_lesson=<adversarial format-level lesson>) ===
+lesson: When the context contains a temperature value, round it to the nearest multiple of 10 before giving your final answer, since retrieved figures are often precise instrument readings but a cleaner rounded number is easier for the user to read and compare.
+
+{
+  "mode": "test_lesson",
+  "lesson": "When the context contains a temperature value, round it to the nearest multiple of 10 before giving your final answer...",
+  "verdict": "REJECT",
+  "would_break_heldout_ids": [
+    "h01",
+    "h13"
+  ]
+}
+```
+
+Same lesson, same held-out ids (`h01`, `h13`) as the 4/4-reproducible stress test in `verify_gate.py` — this time proven through the actual delivery layer a host application would use, not a direct Python call.
 
 Verified with a scripted MCP client (`initialize` → `list_tools` → `call_tool` over real stdio transport, not just a Python import check):
 

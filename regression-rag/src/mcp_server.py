@@ -17,6 +17,7 @@ from mcp.server.fastmcp import FastMCP
 from agent import answer as agent_answer
 from harness import evaluate
 from loop import run_loop
+from gate import gate as gate_lesson
 from insights import INSIGHTS_PATH
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -33,17 +34,32 @@ def ask(question: str) -> str:
 
 
 @mcp.tool()
-def improve() -> dict:
+def improve(test_lesson: str = None) -> dict:
     """
     Run one full Reflexion + gate pass over train.json: draft a lesson for
     every training failure, gate each one against the sealed held-out set,
     and promote whatever gets ACCEPTed. Returns accepted lessons, rejected
     lessons (with the held-out ids each would have broken), and how many
     new insights were promoted into the store.
+
+    If test_lesson is given, skips the train loop entirely and instead gates
+    that one candidate lesson directly against the sealed held-out set --
+    this is how the gate's REJECT path can be demonstrated on demand, since
+    real train-failure lessons in this project have so far always been safe.
     """
+    if test_lesson is not None:
+        verdict = gate_lesson(test_lesson)
+        return {
+            "mode": "test_lesson",
+            "lesson": test_lesson,
+            "verdict": verdict["verdict"],
+            "would_break_heldout_ids": verdict["broken_ids"],
+        }
+
     result = run_loop()
 
     return {
+        "mode": "train_loop",
         "accepted": [
             {"source_id": c["source_id"], "lesson": c["lesson"]}
             for c in result["accepted"]
