@@ -13,17 +13,25 @@ sys.path.insert(0, os.path.dirname(__file__))
 from dotenv import load_dotenv
 from openai import OpenAI
 from retriever import retrieve
+from insights import load_insights
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 client = OpenAI()
 MODEL = "gpt-4o-mini"
 
 
-def answer(question: str, lessons: str = "") -> str:
+def answer(question: str, lessons: str = None) -> str:
     """
     Answer a question using retrieved context.
-    The lessons slot is empty for now — accepted lessons will be injected here on Day 4.
+    If lessons is left as None, the accumulated insight store is loaded
+    automatically -- this is what real callers get. Passing an explicit
+    string (including "") overrides that and skips auto-loading; the gate
+    and the harness's baseline runs rely on this to test one lesson (or no
+    lesson at all) in isolation from everything already in the store.
     """
+    if lessons is None:
+        lessons = load_insights()
+
     context_chunks = retrieve(question, k=3)
     context = "\n\n".join(context_chunks)
 
