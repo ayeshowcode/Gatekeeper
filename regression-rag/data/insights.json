@@ -1,0 +1,14 @@
+[
+  {
+    "source_id": "t01",
+    "lesson": "When the context contains information about multiple celestial bodies, ensure that the entity referenced in the question is clearly identified before extracting any values. Specifically, first determine which planet the question pertains to, then extract the relevant data for that specific entity, avoiding values associated with nearby or similar entities."
+  },
+  {
+    "source_id": "t08",
+    "lesson": "When the context contains multiple planets with distinct attributes, and the question refers to a planet indirectly by comparing its day and year lengths, first identify the specific planet being referenced before extracting its associated values. This ensures that the agent retrieves the correct diameter for the intended planet rather than mistakenly selecting a value from a different entity in the context."
+  },
+  {
+    "source_id": "t09",
+    "lesson": "When the context contains information about multiple entities that are closely related, and the question refers to one of those entities indirectly, ensure to first clarify which entity the question is addressing. Then, extract the relevant information specifically for that entity, avoiding any confusion with details from neighboring entities."
+  }
+]
