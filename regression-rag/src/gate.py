@@ -11,6 +11,7 @@ import json
 
 sys.path.insert(0, os.path.dirname(__file__))
 from harness import evaluate
+from logger import log_event
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 HELDOUT_PATH = os.path.join(DATA_DIR, "heldout.json")
@@ -33,6 +34,8 @@ def gate(candidate_lesson: str) -> dict:
 
     broken_ids = sorted(baseline_passed_ids - new_passed_ids)
     verdict = "REJECT" if broken_ids else "ACCEPT"
+
+    log_event("gate_verdict", lesson=candidate_lesson, verdict=verdict, broken_ids=broken_ids)
 
     return {
         "verdict": verdict,
