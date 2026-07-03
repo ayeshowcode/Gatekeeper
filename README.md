@@ -10,9 +10,22 @@ Improvement gets in. Regression doesn't.
 ![ChromaDB](https://img.shields.io/badge/Vector_Store-ChromaDB-orange)
 ![OpenAI](https://img.shields.io/badge/LLM-OpenAI-412991?logo=openai)
 ![MCP](https://img.shields.io/badge/Protocol-MCP-green)
-![Status](https://img.shields.io/badge/Status-In_Progress-yellow)
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
 
 </div>
+
+---
+
+## The result in one picture
+
+<table>
+<tr>
+<td><img src="regression-rag/docs/hero_graph.png" alt="Hero graph: train accuracy climbing, held-out flat" width="420"></td>
+<td><img src="regression-rag/docs/ablation_graph.png" alt="Ablation: held-out accuracy, gate ON vs gate OFF" width="420"></td>
+</tr>
+</table>
+
+**Left:** across the reflection loop, train accuracy moves while held-out accuracy — the sealed evaluation set — never drops. **Right:** feed the exact same candidate lessons through the loop a second time with the gate switched off, and held-out accuracy regresses. Same lessons, same held-out set, the only variable is whether the gate was consulted. That is the entire claim of this project, made visible before you read a word of explanation. Full walkthrough below.
 
 ---
 
