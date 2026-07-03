@@ -57,7 +57,7 @@ def plot_hero_graph() -> str:
     ax.text(
         0.5, 0.04,
         "Both lines are flat: 3 lessons were gate-ACCEPTED and promoted, but changed neither\n"
-        "train nor held-out accuracy. Storage ≠ effectiveness -- see JOURNAL.md, Day 4.",
+        "train nor held-out accuracy. Storage ≠ effectiveness.",
         transform=ax.transAxes, ha="center", va="bottom", fontsize=9, color="#555555",
         style="italic",
     )
