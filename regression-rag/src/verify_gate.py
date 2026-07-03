@@ -13,11 +13,10 @@ failures) are shown separately by loop.py, and are correctly ACCEPTED there --
 the agent is grounded enough in retrieved context to read past bad reasoning
 advice. This script exists because an all-ACCEPT loop.py run alone doesn't
 prove the gate CAN reject anything; it only proves the real lessons happen to
-be safe. See JOURNAL.md, Day 3, "Where bad advice survives: format vs facts."
+be safe.
 
 Nondeterminism note: temperature=0 is very consistent but not perfectly
-bit-identical on every call (see JOURNAL.md, Day 3, "A lesson's blast radius
-isn't what it claims"). So this script runs the gate several times and only
+bit-identical on every call. So this script runs the gate several times and only
 reports an id as a SOLID regression if it breaks in EVERY run. An id that
 breaks inconsistently is reported as flaky, never presented as proof.
 """
